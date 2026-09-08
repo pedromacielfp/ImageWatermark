@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        overflow: hidden;
+        font-family: Gilroy, sans-serif;
+      }
+      #stage {
+        position: relative;
+        width: 100%;
+        line-height: 0;
+        user-select: none;
+      }
+      #stage img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      #headline {
+        position: absolute;
+        color: #ffffff;
+        font-family: Gilroy, sans-serif;
+        font-weight: 700;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        cursor: grab;
+        outline: none;
+        border: 2px solid transparent;
+        border-radius: 4px;
+        box-sizing: border-box;
+        padding: 2px 6px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        min-width: 1ch;
+      }
+      #headline:focus {
+        cursor: text;
+        user-select: text;
+        border-color: #ffffff;
+        background: rgba(255, 255, 255, 0.12);
+      }
+      #headline:focus::selection,
+      #headline::selection {
+        background: #ffffff;
+        color: #af1e65;
+      }
+      #headline.dragging {
+        cursor: grabbing;
+        user-select: none;
+        border-color: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <img id="photo" alt="Cropped image with overlay" />
+      <div id="headline" contenteditable="true" spellcheck="false"></div>
+    </div>
+    <script>
+      const photo = document.getElementById("photo");
+      const headline = document.getElementById("headline");
+      const stage = document.getElementById("stage");
+
+      let canvasW = 1400;
+      let canvasH = 840;
+      let fontSize = 80;
+      let lineHeight = 80;
+      let initialized = false;
+      let lastImage = "";
+      let dragged = false;
+      let sending = false;
+
+      function sendMessage(type, data) {
+        window.parent.postMessage(Object.assign({
+          isStreamlitMessage: true,
+          type: type
+        }, data), "*");
+      }
+
+      function setFrameHeight() {
+        const height = Math.ceil(stage.getBoundingClientRect().height) || photo.offsetHeight;
+        sendMessage("streamlit:setFrameHeight", { height: height });
+      }
+
+      function scale() {
+        const width = photo.clientWidth || stage.clientWidth;
+        return width > 0 ? width / canvasW : 1;
+      }
+
+      function applyLayout() {
+        const s = scale();
+        headline.style.fontSize = fontSize * s + "px";
+        headline.style.lineHeight = lineHeight * s + "px";
+        headline.style.left = parseFloat(headline.dataset.x || "32") * s + "px";
+        headline.style.top = parseFloat(headline.dataset.y || "728") * s + "px";
+        headline.style.maxWidth = (canvasW - parseFloat(headline.dataset.x || "32") - 32) * s + "px";
+        setFrameHeight();
+      }
+
+      function currentValue() {
+        const s = scale();
+        return {
+          text: headline.innerText.replace(/\u00a0/g, " "),
+          x: Math.round(parseFloat(headline.style.left || "0") / s),
+          y: Math.round(parseFloat(headline.style.top || "0") / s),
+          dragged: dragged
+        };
+      }
+
+      function emit() {
+        if (sending) return;
+        sending = true;
+        sendMessage("streamlit:setComponentValue", { value: currentValue() });
+        sending = false;
+      }
+
+      let emitTimer = null;
+      function emitSoon() {
+        clearTimeout(emitTimer);
+        emitTimer = setTimeout(emit, 200);
+      }
+
+      function initFromArgs(args) {
+        canvasW = args.canvas_width || 1400;
+        canvasH = args.canvas_height || 840;
+        fontSize = args.font_size || 80;
+        lineHeight = args.line_height || 80;
+        if (args.font_data) {
+          const style = document.createElement("style");
+          style.textContent =
+            "@font-face { font-family: 'Gilroy'; src: url('" +
+            args.font_data +
+            "') format('truetype'); font-weight: 700; font-style: normal; }";
+          document.head.appendChild(style);
+        }
+        headline.textContent = args.text || "insert your text here";
+        headline.dataset.x = String(args.x);
+        headline.dataset.y = String(args.y);
+        if (args.image_data && args.image_data !== lastImage) {
+          lastImage = args.image_data;
+          photo.src = args.image_data;
+        } else {
+          applyLayout();
+        }
+        initialized = true;
+      }
+
+      photo.addEventListener("load", applyLayout);
+      window.addEventListener("resize", applyLayout);
+
+      headline.addEventListener("input", function () {
+        if (!dragged) {
+          const s = scale();
+          const pad = 32 * s;
+          const top = Math.max(0, (photo.clientHeight || 0) - pad - headline.offsetHeight);
+          headline.style.top = top + "px";
+          headline.dataset.y = String(Math.round(top / s));
+        }
+        emitSoon();
+      });
+
+      let drag = null;
+      headline.addEventListener("pointerdown", function (event) {
+        if (event.button !== 0) return;
+        drag = {
+          startX: event.clientX,
+          startY: event.clientY,
+          origLeft: headline.offsetLeft,
+          origTop: headline.offsetTop,
+          moved: false
+        };
+        headline.setPointerCapture(event.pointerId);
+      });
+
+      headline.addEventListener("pointermove", function (event) {
+        if (!drag) return;
+        const dx = event.clientX - drag.startX;
+        const dy = event.clientY - drag.startY;
+        if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+        drag.moved = true;
+        dragged = true;
+        headline.classList.add("dragging");
+        const s = scale();
+        const maxLeft = Math.max(0, (photo.clientWidth || 0) - headline.offsetWidth);
+        const maxTop = Math.max(0, (photo.clientHeight || 0) - headline.offsetHeight);
+        const left = Math.min(maxLeft, Math.max(0, drag.origLeft + dx));
+        const top = Math.min(maxTop, Math.max(0, drag.origTop + dy));
+        headline.style.left = left + "px";
+        headline.style.top = top + "px";
+        headline.dataset.x = String(Math.round(left / s));
+        headline.dataset.y = String(Math.round(top / s));
+      });
+
+      function endDrag(event) {
+        if (!drag) return;
+        const wasDrag = drag.moved;
+        drag = null;
+        headline.classList.remove("dragging");
+        if (wasDrag) {
+          headline.blur();
+          emit();
+        }
+      }
+
+      headline.addEventListener("pointerup", endDrag);
+      headline.addEventListener("pointercancel", endDrag);
+      headline.addEventListener("blur", function () {
+        headline.style.borderColor = "transparent";
+        emit();
+      });
+      headline.addEventListener("focus", function () {
+        headline.style.borderColor = "#ffffff";
+      });
+
+      window.addEventListener("message", function (event) {
+        const data = event.data;
+        if (!data) return;
+        if (data.type === "streamlit:render") {
+          const args = data.args || {};
+          if (!initialized) {
+            initFromArgs(args);
+            return;
+          }
+          if (args.image_data && args.image_data !== lastImage) {
+            lastImage = args.image_data;
+            photo.src = args.image_data;
+          }
+        }
+      });
+
+      sendMessage("streamlit:componentReady", { apiVersion: 1 });
+      sendMessage("streamlit:setFrameHeight", { height: 200 });
+    </script>
+  </body>
+</html>
