@@ -1,0 +1,6 @@
+libcairo2
+libcairo2-dev
+libgdk-pixbuf-2.0-0
+pkg-config
+shared-mime-info
+libffi-dev
