@@ -5,6 +5,7 @@ import io
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import resvg_py
 from PIL import Image
 
 from lib.constants import (
@@ -22,23 +23,12 @@ def default_overlay_path() -> Path:
     return Path(__file__).resolve().parent.parent / "assets" / "overlay.svg"
 
 
-def _import_cairosvg():
-    try:
-        import cairosvg
-    except OSError as exc:
-        raise RuntimeError(
-            "cairosvg needs the Cairo C library. Run this app via Docker "
-            "(see the Dockerfile) or install the GTK3 runtime on Windows."
-        ) from exc
-    return cairosvg
-
-
 def _local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
 def normalize_svg(svg_text: str) -> str:
-    """Make implicit gradient stops explicit so Cairo keeps every painted layer."""
+    """Make implicit gradient stops explicit so the renderer keeps every painted layer."""
     root = ET.fromstring(svg_text)
     for element in root.iter():
         if _local_name(element.tag) != "stop":
@@ -93,14 +83,21 @@ def clip_mask_svg(svg_text: str) -> bytes:
     return f'<?xml version="1.0" encoding="UTF-8"?>\n{xml}'.encode("utf-8")
 
 
+def _svg_to_png_bytes(svg_bytes: bytes, width: int, height: int) -> bytes:
+    return resvg_py.svg_to_bytes(
+        svg_string=svg_bytes.decode("utf-8"),
+        width=width,
+        height=height,
+    )
+
+
 @functools.lru_cache(maxsize=8)
 def _render_png_bytes(svg_path: str, width: int, height: int, mask: bool) -> bytes:
     svg_text = Path(svg_path).read_text(encoding="utf-8")
     payload = clip_mask_svg(svg_text) if mask else (
         '<?xml version="1.0" encoding="UTF-8"?>\n' + normalize_svg(svg_text)
     ).encode("utf-8")
-    cairosvg = _import_cairosvg()
-    return cairosvg.svg2png(bytestring=payload, output_width=width, output_height=height)
+    return _svg_to_png_bytes(payload, width, height)
 
 
 def _render_at(svg_path: str | Path | None, size: tuple[int, int], mask: bool) -> Image.Image:

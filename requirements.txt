@@ -1,6 +1,6 @@
 streamlit>=1.32,<2
 Pillow>=10,<12
 numpy>=1.26
-cairosvg>=2.7
+resvg-py>=0.5
 streamlit-cropper>=0.2.2
 pytest>=8

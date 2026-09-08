@@ -18,7 +18,7 @@ same output.
 - The overlay SVG (`assets/overlay.svg`) ships with the app itself — it is a fixed
   design asset, not something the user uploads or the app modifies.
 - It must be rendered from the SVG source (not a rasterized PNG guess) using a
-  proper SVG renderer (e.g. `cairosvg`) so **all** painted layers in the SVG
+  proper SVG renderer so **all** painted layers in the SVG
   (bottom scrim/shadow gradient, magenta swooshes, transparency, and the
   rounded-corner clip-path) are reproduced exactly. Do not drop implicit gradient
   stops (missing `stop-color` means black per the SVG spec).
@@ -96,7 +96,7 @@ same output.
 
 - **Framework:** Streamlit (Python)
 - **Image processing:** Pillow (PIL), NumPy
-- **SVG rendering:** cairosvg
+- **SVG rendering:** resvg (no system Cairo library; Streamlit Cloud compatible)
 - **Interactive cropping:** streamlit-cropper (or equivalent Streamlit-compatible
   cropping component)
 - **Headline UI:** Streamlit custom component (contenteditable + drag) over the
