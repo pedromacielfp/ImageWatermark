@@ -11,17 +11,25 @@ OVERLAY_RENDER_SIZE = (
 )
 PNG_COMPRESS_LEVEL = 6
 
-OVERLAY_VARIANTS = ("overlay", "overlay_ai", "overlay_ai_only")
+OVERLAY_FILE_VARIANTS = ("overlay", "overlay_ai", "overlay_ai_only")
+NO_OVERLAY_VARIANT = "none"
+OVERLAY_VARIANTS = (*OVERLAY_FILE_VARIANTS, NO_OVERLAY_VARIANT)
+OVERLAY_LABELS = {
+    "overlay": "overlay",
+    "overlay_ai": "overlay_ai",
+    "overlay_ai_only": "overlay_ai_only",
+    "none": "no overlay",
+}
 DEFAULT_OVERLAY_VARIANT = "overlay"
 
 DEFAULT_HEADLINE = "insert your text here"
 TEXT_COLOR = (255, 255, 255, 255)
-TEXT_SIZE_PX = 80
-TEXT_LINE_HEIGHT = 80
+TEXT_SIZE_PX = 96
+TEXT_LINE_HEIGHT = 112
 TEXT_PADDING_X = 64
 TEXT_PADDING_Y = 64
 TEXT_FONT_FAMILY = "Gilroy"
-TEXT_FONT_WEIGHT = 700
+TEXT_FONT_WEIGHT = 500
 
 CROP_BOX_COLOR = "#6BCCE0"
 PAGE_BACKGROUND = "#AF1E65"

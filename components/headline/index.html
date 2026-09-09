@@ -25,7 +25,7 @@
         position: absolute;
         color: #ffffff;
         font-family: Gilroy, sans-serif;
-        font-weight: 700;
+        font-weight: 500;
         word-wrap: break-word;
         overflow-wrap: break-word;
         white-space: pre-wrap;
@@ -68,8 +68,9 @@
 
       let canvasW = 1400;
       let canvasH = 840;
-      let fontSize = 80;
-      let lineHeight = 80;
+      let fontSize = 96;
+      let lineHeight = 112;
+      let fontWeight = 500;
       let paddingX = 64;
       let paddingY = 64;
       let initialized = false;
@@ -130,8 +131,9 @@
       function initFromArgs(args) {
         canvasW = args.canvas_width || 1400;
         canvasH = args.canvas_height || 840;
-        fontSize = args.font_size || 80;
-        lineHeight = args.line_height || 80;
+        fontSize = args.font_size || 96;
+        lineHeight = args.line_height || 112;
+        fontWeight = args.font_weight || 500;
         paddingX = args.padding_x || 64;
         paddingY = args.padding_y || 64;
         if (args.font_data) {
@@ -139,9 +141,12 @@
           style.textContent =
             "@font-face { font-family: 'Gilroy'; src: url('" +
             args.font_data +
-            "') format('truetype'); font-weight: 700; font-style: normal; }";
+            "') format('truetype'); font-weight: " +
+            fontWeight +
+            "; font-style: normal; }";
           document.head.appendChild(style);
         }
+        headline.style.fontWeight = String(fontWeight);
         headline.textContent = args.text || "insert your text here";
         headline.dataset.x = String(args.x);
         headline.dataset.y = String(args.y);

@@ -6,13 +6,15 @@ from lib.constants import (
     CROP_BOX_COLOR,
     DEFAULT_HEADLINE,
     DEFAULT_OVERLAY_VARIANT,
+    OVERLAY_FILE_VARIANTS,
+    OVERLAY_LABELS,
     OVERLAY_VARIANTS,
     PAGE_BACKGROUND,
 )
 from lib.crop import crop_and_resize, load_image, render_cropper
 from lib.headline import Headline, default_headline_position
 from lib.headline_component import render_headline_editor
-from lib.overlay import canvas_mask, corner_mask_path, overlay_path, render_overlay
+from lib.overlay import canvas_mask, corner_mask_path, overlay_for_variant, overlay_path
 
 st.set_page_config(page_title="Image Watermark & Crop", layout="centered")
 st.markdown(
@@ -46,7 +48,7 @@ st.caption(
     "Upload a photo, crop it to 1400×840 (5:3), pick an overlay, optionally add headline text, and download a PNG."
 )
 
-missing_overlays = [name for name in OVERLAY_VARIANTS if not overlay_path(name).exists()]
+missing_overlays = [name for name in OVERLAY_FILE_VARIANTS if not overlay_path(name).exists()]
 if missing_overlays:
     st.error("Bundled overlay file(s) missing: " + ", ".join(f"`{name}.svg`" for name in missing_overlays))
     st.stop()
@@ -109,10 +111,10 @@ st.write("Check one overlay. The preview below updates as soon as you pick it.")
 overlay_cols = st.columns(len(OVERLAY_VARIANTS))
 for column, name in zip(overlay_cols, OVERLAY_VARIANTS):
     with column:
-        st.checkbox(name, key=f"ov_{name}")
+        st.checkbox(OVERLAY_LABELS[name], key=f"ov_{name}")
 
 variant = st.session_state.get("overlay_variant", DEFAULT_OVERLAY_VARIANT)
-overlay = render_overlay(overlay_path(variant))
+overlay = overlay_for_variant(variant)
 mask = canvas_mask(corner_mask_path())
 base = compose(cropped, overlay=overlay, mask=mask)
 

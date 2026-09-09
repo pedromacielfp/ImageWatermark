@@ -48,6 +48,7 @@ same output.
   - `overlay` (`assets/overlay.svg`) — full brand overlay (scrim + swooshes)
   - `overlay_ai` (`assets/overlay_ai.svg`) — brand overlay plus AI badge
   - `overlay_ai_only` (`assets/overlay_ai_only.svg`) — AI badge only
+  - `no overlay` — photo only (rounded corners still applied)
 - Overlay position: anchored at (0, 0), scaled to match the full 1400x840 canvas
   exactly (the overlay's own design already defines where its shapes, gradients,
   and rounded-corner clip-path sit within that canvas — do not add any additional
@@ -71,15 +72,15 @@ same output.
   upward so that bottom padding stays 64px.
 - Typography (live preview and export must match):
   - color: white
-  - font-size: 80px
+  - font-size: 96px
   - font-family: Gilroy
-  - font-weight: 700
-  - line-height: 80px
+  - font-weight: 500
+  - line-height: 112px
   - word-wrap: break-word
   - White border while the headline is selected/editing; no border when
     deselected.
-- Render with the bundled file `assets/fonts/EurowingsWeb-Black.ttf` (Eurowings
-  Gilroy Black cut).
+- Render with the bundled file `assets/fonts/EurowingsWeb-Medium.ttf` (Eurowings
+  Gilroy Medium cut).
 - The manager can **drag** the text to reposition it and **edit copy inline**.
 - The manager can **delete the headline**. Export then omits text (crop + overlay
   only). Headline can be added back in the same session.
@@ -115,7 +116,7 @@ watermark-app/
 │   ├── overlay_ai.svg           # brand overlay + AI badge
 │   └── overlay_ai_only.svg      # AI badge only
 │   └── fonts/
-│       └── EurowingsWeb-Black.ttf
+│       └── EurowingsWeb-Medium.ttf
 ├── components/
 │   └── headline/                # live drag + inline-edit headline
 ├── lib/
@@ -147,9 +148,9 @@ watermark-app/
 - [ ] Output is always exactly 1400x840px
 - [ ] Output file supports transparency (rounded corners render correctly, not as
       white/black squares)
-- [ ] Headline uses EurowingsWeb-Black.ttf at 80px / 80px line-height, white,
+- [ ] Headline uses EurowingsWeb-Medium.ttf at 96px / 112px line-height, white,
       break-word wrap; default copy and 64px bottom-left padding; drag + inline
       edit with a white selection border; optional delete so export can omit text;
       baked into the downloaded PNG when kept
-- [ ] Overlay variant checkboxes (`overlay`, `overlay_ai`, `overlay_ai_only`)
+- [ ] Overlay variant checkboxes (`overlay`, `overlay_ai`, `overlay_ai_only`, `no overlay`)
       are exclusive and update the live preview immediately

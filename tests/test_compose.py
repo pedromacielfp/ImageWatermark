@@ -4,7 +4,7 @@ from PIL import Image
 
 from lib.compose import compose, encode_png
 from lib.constants import CANVAS_SIZE
-from lib.overlay import canvas_mask, corner_mask_path, overlay_path, render_overlay
+from lib.overlay import canvas_mask, corner_mask_path, overlay_for_variant, overlay_path, render_overlay
 from tests.conftest import BRAND_SVG
 
 
@@ -76,6 +76,20 @@ def test_overlay_ai_only_compose_keeps_rounded_corners():
     )
     assert result.getpixel((0, 0))[3] == 0
     assert result.getpixel((CANVAS_SIZE[0] - 1, 0))[3] == 0
+
+
+def test_no_overlay_keeps_photo_and_rounded_corners():
+    photo = _solid_photo((0, 255, 0, 255))
+    result = compose(
+        photo,
+        overlay=overlay_for_variant("none"),
+        mask=canvas_mask(corner_mask_path()),
+    )
+    assert result.getpixel((0, 0))[3] == 0
+    cx, cy = CANVAS_SIZE[0] // 2, CANVAS_SIZE[1] // 2
+    pixel = result.getpixel((cx, cy))
+    assert pixel[1] == 255
+    assert pixel[3] == 255
 
 
 def test_brand_compose_corners_transparent_when_present():

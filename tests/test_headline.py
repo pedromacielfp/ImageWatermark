@@ -4,16 +4,27 @@ from lib.constants import (
     CANVAS_HEIGHT,
     CANVAS_SIZE,
     DEFAULT_HEADLINE,
+    TEXT_FONT_WEIGHT,
     TEXT_LINE_HEIGHT,
     TEXT_PADDING_X,
     TEXT_PADDING_Y,
+    TEXT_SIZE_PX,
 )
 from lib.headline import (
     Headline,
+    default_font_path,
     default_headline_position,
     draw_headline,
     wrap_text,
 )
+
+
+def test_headline_uses_medium_40_48():
+    assert TEXT_SIZE_PX == 96
+    assert TEXT_LINE_HEIGHT == 112
+    assert TEXT_FONT_WEIGHT == 500
+    assert default_font_path().name == "EurowingsWeb-Medium.ttf"
+    assert default_font_path().exists()
 
 
 def test_default_copy_is_placeholder():

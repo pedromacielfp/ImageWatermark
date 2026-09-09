@@ -8,6 +8,7 @@ import streamlit.components.v1 as components
 from lib.constants import (
     CANVAS_HEIGHT,
     CANVAS_WIDTH,
+    TEXT_FONT_WEIGHT,
     TEXT_LINE_HEIGHT,
     TEXT_PADDING_X,
     TEXT_PADDING_Y,
@@ -42,6 +43,7 @@ def render_headline_editor(
         canvas_height=CANVAS_HEIGHT,
         font_size=TEXT_SIZE_PX,
         line_height=TEXT_LINE_HEIGHT,
+        font_weight=TEXT_FONT_WEIGHT,
         padding_x=TEXT_PADDING_X,
         padding_y=TEXT_PADDING_Y,
         overlay_variant=overlay_variant,

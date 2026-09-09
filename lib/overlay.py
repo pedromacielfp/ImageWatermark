@@ -12,8 +12,9 @@ from lib.constants import (
     CANVAS_HEIGHT,
     CANVAS_SIZE,
     CANVAS_WIDTH,
+    NO_OVERLAY_VARIANT,
+    OVERLAY_FILE_VARIANTS,
     OVERLAY_RENDER_SCALE,
-    OVERLAY_VARIANTS,
 )
 
 SVG_NS = "http://www.w3.org/2000/svg"
@@ -25,7 +26,7 @@ def assets_dir() -> Path:
 
 
 def overlay_path(variant: str = "overlay") -> Path:
-    if variant not in OVERLAY_VARIANTS:
+    if variant not in OVERLAY_FILE_VARIANTS:
         raise ValueError(f"Unknown overlay variant: {variant}")
     return assets_dir() / f"{variant}.svg"
 
@@ -37,6 +38,13 @@ def default_overlay_path() -> Path:
 def corner_mask_path() -> Path:
     """Rounded corners always come from overlay.svg's clip-path."""
     return overlay_path("overlay")
+
+
+def overlay_for_variant(variant: str, size: tuple[int, int] = CANVAS_SIZE) -> Image.Image:
+    """Rendered overlay pixels, or a fully transparent canvas for `none`."""
+    if variant == NO_OVERLAY_VARIANT:
+        return Image.new("RGBA", size, (0, 0, 0, 0))
+    return render_overlay(overlay_path(variant), size=size)
 
 
 def _local_name(tag: str) -> str:

@@ -4,7 +4,7 @@ import pytest
 from PIL import Image
 
 from lib.constants import CANVAS_SIZE
-from lib.overlay import canvas_mask, overlay_path, render_overlay
+from lib.overlay import canvas_mask, overlay_for_variant, overlay_path, render_overlay
 from tests.conftest import BRAND_SVG
 
 
@@ -70,6 +70,16 @@ def test_overlay_ai_only_is_badge_without_scrim():
 def test_overlay_path_rejects_unknown_variant():
     with pytest.raises(ValueError, match="Unknown overlay variant"):
         overlay_path("not_a_real_overlay")
+    with pytest.raises(ValueError, match="Unknown overlay variant"):
+        overlay_path("none")
+
+
+def test_none_overlay_is_fully_transparent():
+    overlay = overlay_for_variant("none")
+    assert overlay.size == CANVAS_SIZE
+    assert overlay.mode == "RGBA"
+    assert overlay.getpixel((700, 420))[3] == 0
+    assert overlay.getpixel((1352, 48))[3] == 0
 
 
 def test_brand_overlay_keeps_scrim_and_swoosh():
