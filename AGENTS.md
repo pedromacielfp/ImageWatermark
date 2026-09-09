@@ -43,8 +43,11 @@ same output.
   previous step guarantees this resize is proportional.
 
 ### 4. Overlay compositing
-- After the crop is finalized, composite the rendered SVG overlay on top of the
-  1400x840 cropped image.
+- After the crop is finalized, the user picks **one** bundled overlay via
+  exclusive checkboxes. Checking a variant updates the live preview immediately:
+  - `overlay` (`assets/overlay.svg`) — full brand overlay (scrim + swooshes)
+  - `overlay_ai` (`assets/overlay_ai.svg`) — brand overlay plus AI badge
+  - `overlay_ai_only` (`assets/overlay_ai_only.svg`) — AI badge only
 - Overlay position: anchored at (0, 0), scaled to match the full 1400x840 canvas
   exactly (the overlay's own design already defines where its shapes, gradients,
   and rounded-corner clip-path sit within that canvas — do not add any additional
@@ -54,11 +57,9 @@ same output.
   its original design.
 
 ### 5. Rounded corners
-- The overlay SVG already defines a rounded-rectangle clip-path for the whole
-  canvas. When compositing, the final combined image (photo + overlay + text)
-  must respect that same rounded-corner boundary — i.e. the corners outside the
-  overlay's rounded-rect shape should end up transparent, not the photo's own
-  square corners.
+- `overlay.svg` defines a rounded-rectangle clip-path for the whole canvas.
+  Every variant uses that same clip when compositing — including `overlay_ai_only`,
+  which has no clip-path of its own — so corners stay transparent PNG, not square.
 - Output format must support transparency (PNG) to preserve this, since the
   rounded corners can't be represented in a JPEG.
 
@@ -80,12 +81,14 @@ same output.
 - Render with the bundled file `assets/fonts/EurowingsWeb-Black.ttf` (Eurowings
   Gilroy Black cut).
 - The manager can **drag** the text to reposition it and **edit copy inline**.
-- Export bakes the text into the final PNG at that position. The download
-  includes crop + overlay + text.
+- The manager can **delete the headline**. Export then omits text (crop + overlay
+  only). Headline can be added back in the same session.
+- When a headline is present, export bakes it into the final PNG at that
+  position. The download includes crop + overlay, and text only if it was kept.
 
 ### 7. Output
-- Final exported image: exactly 1400x840px, PNG, with the overlay applied,
-  headline baked in, and rounded corners preserved.
+- Final exported image: exactly 1400x840px, PNG, with the chosen overlay applied,
+  optional headline baked in, and rounded corners preserved.
 - Provide a download button for the user to save the result.
 - (Nice-to-have, not required for v1): warn or auto-compress if file size exceeds
   5MB, matching the export constraint used elsewhere in this org's image tooling.
@@ -108,7 +111,9 @@ same output.
 watermark-app/
 ├── app.py                       # Streamlit entrypoint
 ├── assets/
-│   ├── overlay.svg              # fixed brand overlay
+│   ├── overlay.svg              # full brand overlay
+│   ├── overlay_ai.svg           # brand overlay + AI badge
+│   └── overlay_ai_only.svg      # AI badge only
 │   └── fonts/
 │       └── EurowingsWeb-Black.ttf
 ├── components/
@@ -144,4 +149,7 @@ watermark-app/
       white/black squares)
 - [ ] Headline uses EurowingsWeb-Black.ttf at 80px / 80px line-height, white,
       break-word wrap; default copy and 64px bottom-left padding; drag + inline
-      edit with a white selection border; baked into the downloaded PNG
+      edit with a white selection border; optional delete so export can omit text;
+      baked into the downloaded PNG when kept
+- [ ] Overlay variant checkboxes (`overlay`, `overlay_ai`, `overlay_ai_only`)
+      are exclusive and update the live preview immediately

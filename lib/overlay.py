@@ -13,14 +13,30 @@ from lib.constants import (
     CANVAS_SIZE,
     CANVAS_WIDTH,
     OVERLAY_RENDER_SCALE,
+    OVERLAY_VARIANTS,
 )
 
 SVG_NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", SVG_NS)
 
 
+def assets_dir() -> Path:
+    return Path(__file__).resolve().parent.parent / "assets"
+
+
+def overlay_path(variant: str = "overlay") -> Path:
+    if variant not in OVERLAY_VARIANTS:
+        raise ValueError(f"Unknown overlay variant: {variant}")
+    return assets_dir() / f"{variant}.svg"
+
+
 def default_overlay_path() -> Path:
-    return Path(__file__).resolve().parent.parent / "assets" / "overlay.svg"
+    return overlay_path("overlay")
+
+
+def corner_mask_path() -> Path:
+    """Rounded corners always come from overlay.svg's clip-path."""
+    return overlay_path("overlay")
 
 
 def _local_name(tag: str) -> str:
@@ -91,7 +107,7 @@ def _svg_to_png_bytes(svg_bytes: bytes, width: int, height: int) -> bytes:
     )
 
 
-@functools.lru_cache(maxsize=8)
+@functools.lru_cache(maxsize=16)
 def _render_png_bytes(svg_path: str, width: int, height: int, mask: bool) -> bytes:
     svg_text = Path(svg_path).read_text(encoding="utf-8")
     payload = clip_mask_svg(svg_text) if mask else (
@@ -119,4 +135,5 @@ def render_overlay(svg_path: str | Path | None = None, size: tuple[int, int] = C
 
 def canvas_mask(svg_path: str | Path | None = None, size: tuple[int, int] = CANVAS_SIZE) -> Image.Image:
     """Opaque inside the SVG clip-path, transparent outside (L mode)."""
-    return _render_at(svg_path, size, mask=True)
+    path = svg_path if svg_path is not None else corner_mask_path()
+    return _render_at(path, size, mask=True)

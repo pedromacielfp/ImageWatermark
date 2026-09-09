@@ -25,6 +25,8 @@ def render_headline_editor(
     x: int,
     y: int,
     *,
+    overlay_variant: str = "overlay",
+    dragged: bool = False,
     key: str | None = None,
 ) -> dict:
     """Live headline: drag to move, click to edit. Coordinates are canvas pixels."""
@@ -42,11 +44,12 @@ def render_headline_editor(
         line_height=TEXT_LINE_HEIGHT,
         padding_x=TEXT_PADDING_X,
         padding_y=TEXT_PADDING_Y,
+        overlay_variant=overlay_variant,
         key=key,
-        default={"text": text, "x": x, "y": y, "dragged": False},
+        default={"text": text, "x": x, "y": y, "dragged": dragged},
     )
     if not value:
-        return {"text": text, "x": x, "y": y, "dragged": False}
+        return {"text": text, "x": x, "y": y, "dragged": dragged}
     return {
         "text": str(value.get("text", text)),
         "x": int(value.get("x", x)),

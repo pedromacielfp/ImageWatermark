@@ -4,7 +4,7 @@ from PIL import Image
 
 from lib.compose import compose, encode_png
 from lib.constants import CANVAS_SIZE
-from lib.overlay import canvas_mask, render_overlay
+from lib.overlay import canvas_mask, corner_mask_path, overlay_path, render_overlay
 from tests.conftest import BRAND_SVG
 
 
@@ -59,6 +59,23 @@ def test_compose_png_bytes_are_deterministic(fixture_svg: Path):
     second = encode_png(compose(photo.copy(), overlay=overlay.copy(), mask=mask.copy()))
     assert first == second
     assert first[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_compose_without_headline_keeps_photo():
+    photo = _solid_photo((0, 255, 0, 255))
+    result = compose(photo, overlay=render_overlay(), mask=canvas_mask(), headline=None)
+    cx, cy = CANVAS_SIZE[0] // 2, CANVAS_SIZE[1] // 2
+    assert result.getpixel((cx, cy))[1] > 0
+
+
+def test_overlay_ai_only_compose_keeps_rounded_corners():
+    result = compose(
+        _solid_photo(),
+        overlay=render_overlay(overlay_path("overlay_ai_only")),
+        mask=canvas_mask(corner_mask_path()),
+    )
+    assert result.getpixel((0, 0))[3] == 0
+    assert result.getpixel((CANVAS_SIZE[0] - 1, 0))[3] == 0
 
 
 def test_brand_compose_corners_transparent_when_present():

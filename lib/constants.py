@@ -11,6 +11,9 @@ OVERLAY_RENDER_SIZE = (
 )
 PNG_COMPRESS_LEVEL = 6
 
+OVERLAY_VARIANTS = ("overlay", "overlay_ai", "overlay_ai_only")
+DEFAULT_OVERLAY_VARIANT = "overlay"
+
 DEFAULT_HEADLINE = "insert your text here"
 TEXT_COLOR = (255, 255, 255, 255)
 TEXT_SIZE_PX = 80
