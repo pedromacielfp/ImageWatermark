@@ -70,6 +70,8 @@
       let canvasH = 840;
       let fontSize = 80;
       let lineHeight = 80;
+      let paddingX = 64;
+      let paddingY = 64;
       let initialized = false;
       let lastImage = "";
       let dragged = false;
@@ -96,9 +98,9 @@
         const s = scale();
         headline.style.fontSize = fontSize * s + "px";
         headline.style.lineHeight = lineHeight * s + "px";
-        headline.style.left = parseFloat(headline.dataset.x || "32") * s + "px";
-        headline.style.top = parseFloat(headline.dataset.y || "728") * s + "px";
-        headline.style.maxWidth = (canvasW - parseFloat(headline.dataset.x || "32") - 32) * s + "px";
+        headline.style.left = parseFloat(headline.dataset.x || String(paddingX)) * s + "px";
+        headline.style.top = parseFloat(headline.dataset.y || String(canvasH - paddingY - lineHeight)) * s + "px";
+        headline.style.maxWidth = (canvasW - parseFloat(headline.dataset.x || String(paddingX)) - paddingX) * s + "px";
         setFrameHeight();
       }
 
@@ -130,6 +132,8 @@
         canvasH = args.canvas_height || 840;
         fontSize = args.font_size || 80;
         lineHeight = args.line_height || 80;
+        paddingX = args.padding_x || 64;
+        paddingY = args.padding_y || 64;
         if (args.font_data) {
           const style = document.createElement("style");
           style.textContent =
@@ -156,7 +160,7 @@
       headline.addEventListener("input", function () {
         if (!dragged) {
           const s = scale();
-          const pad = 32 * s;
+          const pad = paddingY * s;
           const top = Math.max(0, (photo.clientHeight || 0) - pad - headline.offsetHeight);
           headline.style.top = top + "px";
           headline.dataset.y = String(Math.round(top / s));

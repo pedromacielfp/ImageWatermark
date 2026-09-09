@@ -65,9 +65,9 @@ same output.
 ### 6. Headline text
 - After crop + overlay, overlay editable headline text on the live preview.
 - Default copy: `insert your text here`.
-- Default position: bottom-left, **32px** from the left edge and **32px** from
+- Default position: bottom-left, **64px** from the left edge and **64px** from
   the bottom edge of the 1400x840 canvas. Until the user drags, extra lines grow
-  upward so that bottom padding stays 32px.
+  upward so that bottom padding stays 64px.
 - Typography (live preview and export must match):
   - color: white
   - font-size: 80px
@@ -143,5 +143,5 @@ watermark-app/
 - [ ] Output file supports transparency (rounded corners render correctly, not as
       white/black squares)
 - [ ] Headline uses EurowingsWeb-Black.ttf at 80px / 80px line-height, white,
-      break-word wrap; default copy and 32px bottom-left padding; drag + inline
+      break-word wrap; default copy and 64px bottom-left padding; drag + inline
       edit with a white selection border; baked into the downloaded PNG

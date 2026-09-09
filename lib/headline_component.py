@@ -9,6 +9,8 @@ from lib.constants import (
     CANVAS_HEIGHT,
     CANVAS_WIDTH,
     TEXT_LINE_HEIGHT,
+    TEXT_PADDING_X,
+    TEXT_PADDING_Y,
     TEXT_SIZE_PX,
 )
 from lib.headline import default_font_path
@@ -38,6 +40,8 @@ def render_headline_editor(
         canvas_height=CANVAS_HEIGHT,
         font_size=TEXT_SIZE_PX,
         line_height=TEXT_LINE_HEIGHT,
+        padding_x=TEXT_PADDING_X,
+        padding_y=TEXT_PADDING_Y,
         key=key,
         default={"text": text, "x": x, "y": y, "dragged": False},
     )

@@ -20,7 +20,7 @@ def test_default_copy_is_placeholder():
     assert DEFAULT_HEADLINE == "insert your text here"
 
 
-def test_default_position_is_bottom_left_with_32px_padding():
+def test_default_position_is_bottom_left_with_64px_padding():
     x, y = default_headline_position(DEFAULT_HEADLINE)
     assert x == TEXT_PADDING_X
     lines = wrap_text(DEFAULT_HEADLINE, max_width=CANVAS_SIZE[0] - 2 * TEXT_PADDING_X)
