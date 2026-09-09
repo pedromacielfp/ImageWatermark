@@ -26,7 +26,7 @@ class Headline:
 
 
 def default_font_path() -> Path:
-    return Path(__file__).resolve().parent.parent / "assets" / "fonts" / "EurowingsWeb-Medium.ttf"
+    return Path(__file__).resolve().parent.parent / "assets" / "fonts" / "EurowingsWeb-Bold.ttf"
 
 
 @lru_cache(maxsize=1)
@@ -34,7 +34,7 @@ def load_font() -> ImageFont.FreeTypeFont:
     path = default_font_path()
     if not path.exists():
         raise FileNotFoundError(
-            f"Headline font missing: {path}. Place EurowingsWeb-Medium.ttf in assets/fonts/."
+            f"Headline font missing: {path}. Place EurowingsWeb-Bold.ttf in assets/fonts/."
         )
     return ImageFont.truetype(str(path), TEXT_SIZE_PX)
 

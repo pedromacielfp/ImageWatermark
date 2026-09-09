@@ -25,7 +25,7 @@
         position: absolute;
         color: #ffffff;
         font-family: Gilroy, sans-serif;
-        font-weight: 500;
+        font-weight: 700;
         word-wrap: break-word;
         overflow-wrap: break-word;
         white-space: pre-wrap;
@@ -68,11 +68,11 @@
 
       let canvasW = 1400;
       let canvasH = 840;
-      let fontSize = 96;
+      let fontSize = 95;
       let lineHeight = 112;
-      let fontWeight = 500;
+      let fontWeight = 700;
       let paddingX = 64;
-      let paddingY = 64;
+      let paddingY = 48;
       let initialized = false;
       let lastImage = "";
       let dragged = false;
@@ -131,11 +131,11 @@
       function initFromArgs(args) {
         canvasW = args.canvas_width || 1400;
         canvasH = args.canvas_height || 840;
-        fontSize = args.font_size || 96;
+        fontSize = args.font_size || 95;
         lineHeight = args.line_height || 112;
-        fontWeight = args.font_weight || 500;
+        fontWeight = args.font_weight || 700;
         paddingX = args.padding_x || 64;
-        paddingY = args.padding_y || 64;
+        paddingY = args.padding_y || 48;
         if (args.font_data) {
           const style = document.createElement("style");
           style.textContent =
