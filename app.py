@@ -144,11 +144,19 @@ if st.session_state.headline_enabled:
             "y": y,
             "dragged": False,
         }
+    headline = Headline(
+        text=st.session_state.headline["text"],
+        x=st.session_state.headline["x"],
+        y=st.session_state.headline["y"],
+        bottom_anchored=not st.session_state.headline.get("dragged", False),
+    )
+    baked = compose(cropped, overlay=overlay, mask=mask, headline=headline)
     edited = render_headline_editor(
         encode_png(base),
         text=st.session_state.headline["text"],
         x=st.session_state.headline["x"],
         y=st.session_state.headline["y"],
+        baked_png=encode_png(baked),
         overlay_variant=variant,
         dragged=st.session_state.headline.get("dragged", False),
         key=f"headline-{file_id}-{variant}",

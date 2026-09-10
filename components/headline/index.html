@@ -26,23 +26,26 @@
         color: #ffffff;
         font-family: Gilroy, sans-serif;
         font-weight: 700;
+        font-synthesis: none;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: geometricPrecision;
         word-wrap: break-word;
         overflow-wrap: break-word;
         white-space: pre-wrap;
         cursor: grab;
-        outline: none;
-        border: 2px solid transparent;
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        border: none;
         border-radius: 4px;
-        box-sizing: border-box;
-        padding: 2px 6px;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        box-sizing: content-box;
+        padding: 0;
+        text-shadow: none;
         min-width: 1ch;
       }
       #headline:focus {
         cursor: text;
         user-select: text;
-        border-color: #ffffff;
-        background: rgba(255, 255, 255, 0.12);
+        outline-color: #ffffff;
       }
       #headline:focus::selection,
       #headline::selection {
@@ -52,7 +55,7 @@
       #headline.dragging {
         cursor: grabbing;
         user-select: none;
-        border-color: #ffffff;
+        outline-color: #ffffff;
       }
     </style>
   </head>
@@ -74,7 +77,10 @@
       let paddingX = 64;
       let paddingY = 48;
       let initialized = false;
-      let lastImage = "";
+      let baseImage = "";
+      let bakedImage = "";
+      let lastShown = "";
+      let interacting = false;
       let dragged = false;
       let sending = false;
 
@@ -93,6 +99,17 @@
       function scale() {
         const width = photo.clientWidth || stage.clientWidth;
         return width > 0 ? width / canvasW : 1;
+      }
+
+      function showPreview() {
+        const live = interacting || !bakedImage;
+        const next = live ? baseImage : bakedImage;
+        if (next && lastShown !== next) {
+          lastShown = next;
+          photo.src = next;
+        }
+        headline.style.color = live ? "#ffffff" : "transparent";
+        headline.style.caretColor = live ? "#ffffff" : "transparent";
       }
 
       function applyLayout() {
@@ -143,17 +160,17 @@
             args.font_data +
             "') format('truetype'); font-weight: " +
             fontWeight +
-            "; font-style: normal; }";
+            "; font-style: normal; font-display: block; }";
           document.head.appendChild(style);
         }
         headline.style.fontWeight = String(fontWeight);
         headline.textContent = args.text || "insert your text here";
         headline.dataset.x = String(args.x);
         headline.dataset.y = String(args.y);
-        if (args.image_data && args.image_data !== lastImage) {
-          lastImage = args.image_data;
-          photo.src = args.image_data;
-        } else {
+        baseImage = args.image_data || "";
+        bakedImage = args.baked_data || "";
+        showPreview();
+        if (!baseImage && !bakedImage) {
           applyLayout();
         }
         initialized = true;
@@ -163,6 +180,8 @@
       window.addEventListener("resize", applyLayout);
 
       headline.addEventListener("input", function () {
+        interacting = true;
+        showPreview();
         if (!dragged) {
           const s = scale();
           const pad = paddingY * s;
@@ -176,6 +195,8 @@
       let drag = null;
       headline.addEventListener("pointerdown", function (event) {
         if (event.button !== 0) return;
+        interacting = true;
+        showPreview();
         drag = {
           startX: event.clientX,
           startY: event.clientY,
@@ -193,7 +214,9 @@
         if (!drag.moved && Math.hypot(dx, dy) < 5) return;
         drag.moved = true;
         dragged = true;
+        interacting = true;
         headline.classList.add("dragging");
+        showPreview();
         const s = scale();
         const maxLeft = Math.max(0, (photo.clientWidth || 0) - headline.offsetWidth);
         const maxTop = Math.max(0, (photo.clientHeight || 0) - headline.offsetHeight);
@@ -219,11 +242,15 @@
       headline.addEventListener("pointerup", endDrag);
       headline.addEventListener("pointercancel", endDrag);
       headline.addEventListener("blur", function () {
-        headline.style.borderColor = "transparent";
+        interacting = false;
+        headline.style.outlineColor = "transparent";
         emit();
+        showPreview();
       });
       headline.addEventListener("focus", function () {
-        headline.style.borderColor = "#ffffff";
+        interacting = true;
+        headline.style.outlineColor = "#ffffff";
+        showPreview();
       });
 
       window.addEventListener("message", function (event) {
@@ -235,10 +262,13 @@
             initFromArgs(args);
             return;
           }
-          if (args.image_data && args.image_data !== lastImage) {
-            lastImage = args.image_data;
-            photo.src = args.image_data;
+          if (args.image_data) {
+            baseImage = args.image_data;
           }
+          if (args.baked_data) {
+            bakedImage = args.baked_data;
+          }
+          showPreview();
         }
       });
 

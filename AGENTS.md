@@ -78,7 +78,7 @@ same output.
   - line-height: 112px
   - word-wrap: break-word
   - White border while the headline is selected/editing; no border when
-    deselected.
+    deselected. Idle preview shows the baked PNG so it matches export.
 - Render with the bundled file `assets/fonts/EurowingsWeb-Bold.ttf` (Eurowings
   Gilroy Bold cut).
 - The manager can **drag** the text to reposition it and **edit copy inline**.
