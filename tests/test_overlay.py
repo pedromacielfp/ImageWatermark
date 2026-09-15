@@ -74,6 +74,23 @@ def test_overlay_path_rejects_unknown_variant():
         overlay_path("none")
 
 
+def test_ewh_overlays_render_wordmark():
+    samples = {
+        "EWH_color_left": (540, 68),
+        "EWH_white_left": (540, 68),
+        "EWH_color_right": (1290, 68),
+        "EWH_white_right": (1290, 68),
+    }
+    for variant, xy in samples.items():
+        overlay = overlay_for_variant(variant)
+        assert overlay.size == CANVAS_SIZE
+        assert overlay.mode == "RGBA"
+        assert overlay.getpixel((0, 0))[3] == 0
+        center = overlay.getpixel((CANVAS_SIZE[0] // 2, CANVAS_SIZE[1] // 2))
+        assert center[3] == 0
+        assert overlay.getpixel(xy)[3] > 50
+
+
 def test_none_overlay_is_fully_transparent():
     overlay = overlay_for_variant("none")
     assert overlay.size == CANVAS_SIZE

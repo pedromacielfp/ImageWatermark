@@ -2,13 +2,17 @@ import streamlit as st
 
 from lib.compose import compose, encode_png
 from lib.constants import (
+    ALL_OVERLAY_VARIANTS,
+    BRANDS,
     CANVAS_SIZE,
     CROP_BOX_COLOR,
+    DEFAULT_BRAND,
     DEFAULT_HEADLINE,
+    DEFAULT_OVERLAY_BY_BRAND,
     DEFAULT_OVERLAY_VARIANT,
     OVERLAY_FILE_VARIANTS,
     OVERLAY_LABELS,
-    OVERLAY_VARIANTS,
+    OVERLAYS_BY_BRAND,
     PAGE_BACKGROUND,
 )
 from lib.crop import crop_and_resize, load_image, render_cropper
@@ -56,15 +60,39 @@ if missing_overlays:
 
 def _sync_overlay_checkboxes(variant: str) -> None:
     st.session_state.overlay_variant = variant
-    for name in OVERLAY_VARIANTS:
+    for name in ALL_OVERLAY_VARIANTS:
         st.session_state[f"ov_{name}"] = name == variant
 
 
+def _sync_brand_checkboxes(brand: str) -> None:
+    brand_changed = st.session_state.get("brand") != brand
+    st.session_state.brand = brand
+    for name in BRANDS:
+        st.session_state[f"brand_{name}"] = name == brand
+    options = OVERLAYS_BY_BRAND[brand]
+    current = st.session_state.get("overlay_variant")
+    if brand_changed or current not in options:
+        _sync_overlay_checkboxes(DEFAULT_OVERLAY_BY_BRAND[brand])
+
+
+def _reconcile_brand_checkboxes() -> None:
+    previous = st.session_state.get("brand", DEFAULT_BRAND)
+    if all(f"brand_{name}" in st.session_state for name in BRANDS):
+        checked = [name for name in BRANDS if st.session_state[f"brand_{name}"]]
+        newly_checked = [name for name in checked if name != previous]
+        if newly_checked:
+            previous = newly_checked[-1]
+    _sync_brand_checkboxes(previous)
+
+
 def _reconcile_overlay_checkboxes() -> None:
-    """Keep exactly one overlay checked. Must run before the checkbox widgets render."""
-    previous = st.session_state.get("overlay_variant", DEFAULT_OVERLAY_VARIANT)
-    if all(f"ov_{name}" in st.session_state for name in OVERLAY_VARIANTS):
-        checked = [name for name in OVERLAY_VARIANTS if st.session_state[f"ov_{name}"]]
+    brand = st.session_state.get("brand", DEFAULT_BRAND)
+    options = OVERLAYS_BY_BRAND[brand]
+    previous = st.session_state.get("overlay_variant", DEFAULT_OVERLAY_BY_BRAND[brand])
+    if previous not in options:
+        previous = DEFAULT_OVERLAY_BY_BRAND[brand]
+    if all(f"ov_{name}" in st.session_state for name in options):
+        checked = [name for name in options if st.session_state[f"ov_{name}"]]
         newly_checked = [name for name in checked if name != previous]
         if newly_checked:
             previous = newly_checked[-1]
@@ -85,11 +113,25 @@ if st.session_state.get("file_id") != file_id:
     st.session_state.confirmed = False
     st.session_state.headline = None
     st.session_state.headline_enabled = True
+    st.session_state.brand = DEFAULT_BRAND
+    st.session_state.overlay_variant = DEFAULT_OVERLAY_VARIANT
+    for name in BRANDS:
+        st.session_state[f"brand_{name}"] = name == DEFAULT_BRAND
+    for name in ALL_OVERLAY_VARIANTS:
+        st.session_state[f"ov_{name}"] = name == DEFAULT_OVERLAY_VARIANT
 
 image = load_image(uploaded)
 
 st.subheader("1. Crop")
 st.write("Move and resize the box. The aspect ratio stays locked at 5:3.")
+if "brand" not in st.session_state:
+    st.session_state.brand = DEFAULT_BRAND
+_reconcile_brand_checkboxes()
+st.write("Brand")
+brand_cols = st.columns(len(BRANDS))
+for column, name in zip(brand_cols, BRANDS):
+    with column:
+        st.checkbox(name, key=f"brand_{name}")
 box = render_cropper(image, key=f"cropper-{file_id}")
 
 if st.button("Confirm crop", type="primary"):
@@ -103,13 +145,18 @@ if not st.session_state.get("confirmed"):
 cropped = crop_and_resize(image, st.session_state.box)
 
 if "overlay_variant" not in st.session_state:
-    st.session_state.overlay_variant = DEFAULT_OVERLAY_VARIANT
+    st.session_state.overlay_variant = DEFAULT_OVERLAY_BY_BRAND[
+        st.session_state.get("brand", DEFAULT_BRAND)
+    ]
 _reconcile_overlay_checkboxes()
+
+brand = st.session_state.get("brand", DEFAULT_BRAND)
+options = OVERLAYS_BY_BRAND[brand]
 
 st.subheader("2. Overlay")
 st.write("Check one overlay. The preview below updates as soon as you pick it.")
-overlay_cols = st.columns(len(OVERLAY_VARIANTS))
-for column, name in zip(overlay_cols, OVERLAY_VARIANTS):
+overlay_cols = st.columns(len(options))
+for column, name in zip(overlay_cols, options):
     with column:
         st.checkbox(OVERLAY_LABELS[name], key=f"ov_{name}")
 

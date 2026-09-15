@@ -4,7 +4,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE_SVG = Path(__file__).resolve().parent / "fixtures" / "rounded_overlay.svg"
-BRAND_SVG = ROOT / "assets" / "overlay.svg"
+BRAND_SVG = ROOT / "assets" / "EW" / "overlay.svg"
 
 
 @pytest.fixture

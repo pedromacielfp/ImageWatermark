@@ -78,6 +78,16 @@ def test_overlay_ai_only_compose_keeps_rounded_corners():
     assert result.getpixel((CANVAS_SIZE[0] - 1, 0))[3] == 0
 
 
+def test_ewh_compose_keeps_rounded_corners():
+    result = compose(
+        _solid_photo(),
+        overlay=overlay_for_variant("EWH_color_right"),
+        mask=canvas_mask(corner_mask_path()),
+    )
+    assert result.getpixel((0, 0))[3] == 0
+    assert result.getpixel((CANVAS_SIZE[0] - 1, 0))[3] == 0
+
+
 def test_no_overlay_keeps_photo_and_rounded_corners():
     photo = _solid_photo((0, 255, 0, 255))
     result = compose(

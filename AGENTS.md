@@ -15,7 +15,7 @@ same output.
 ## Core requirements
 
 ### 1. Bundled overlay asset
-- The overlay SVG (`assets/overlay.svg`) ships with the app itself — it is a fixed
+- The overlay SVG (`assets/EW/overlay.svg`) ships with the app itself — it is a fixed
   design asset, not something the user uploads or the app modifies.
 - It must be rendered from the SVG source (not a rasterized PNG guess) using a
   proper SVG renderer so **all** painted layers in the SVG
@@ -43,12 +43,12 @@ same output.
   previous step guarantees this resize is proportional.
 
 ### 4. Overlay compositing
-- After the crop is finalized, the user picks **one** bundled overlay via
-  exclusive checkboxes. Checking a variant updates the live preview immediately:
-  - `overlay` (`assets/overlay.svg`) — full brand overlay (scrim + swooshes)
-  - `overlay_ai` (`assets/overlay_ai.svg`) — brand overlay plus AI badge
-  - `overlay_ai_only` (`assets/overlay_ai_only.svg`) — AI badge only
-  - `no overlay` — photo only (rounded corners still applied)
+- During crop, the user picks **EW** or **EWH**. After the crop is finalized, exclusive
+  overlay checkboxes show that brand's assets and update the live preview immediately:
+  - EW: `overlay`, `overlay_ai`, `overlay_ai_only`, `no overlay`
+    (`assets/EW/`)
+  - EWH: `color_left`, `color_right`, `white_left`, `white_right`
+    (`assets/EWH/`)
 - Overlay position: anchored at (0, 0), scaled to match the full 1400x840 canvas
   exactly (the overlay's own design already defines where its shapes, gradients,
   and rounded-corner clip-path sit within that canvas — do not add any additional
@@ -58,7 +58,7 @@ same output.
   its original design.
 
 ### 5. Rounded corners
-- `overlay.svg` defines a rounded-rectangle clip-path for the whole canvas.
+- `assets/EW/overlay.svg` defines a rounded-rectangle clip-path for the whole canvas.
   Every variant uses that same clip when compositing — including `overlay_ai_only`,
   which has no clip-path of its own — so corners stay transparent PNG, not square.
 - Output format must support transparency (PNG) to preserve this, since the
@@ -112,9 +112,15 @@ same output.
 watermark-app/
 ├── app.py                       # Streamlit entrypoint
 ├── assets/
-│   ├── overlay.svg              # full brand overlay
-│   ├── overlay_ai.svg           # brand overlay + AI badge
-│   └── overlay_ai_only.svg      # AI badge only
+│   ├── EW/
+│   │   ├── overlay.svg
+│   │   ├── overlay_ai.svg
+│   │   └── overlay_ai_only.svg
+│   ├── EWH/
+│   │   ├── EWH_color_left.svg
+│   │   ├── EWH_color_right.svg
+│   │   ├── EWH_white_left.svg
+│   │   └── EWH_white_right.svg
 │   └── fonts/
 │       └── EurowingsWeb-Bold.ttf
 ├── components/
@@ -152,5 +158,5 @@ watermark-app/
       break-word wrap; default copy, 64px left and 48px bottom padding; drag + inline
       edit with a white selection border; optional delete so export can omit text;
       baked into the downloaded PNG when kept
-- [ ] Overlay variant checkboxes (`overlay`, `overlay_ai`, `overlay_ai_only`, `no overlay`)
-      are exclusive and update the live preview immediately
+- [ ] Overlay variant checkboxes are exclusive per brand (`EW` vs `EWH`) and update
+      the live preview immediately

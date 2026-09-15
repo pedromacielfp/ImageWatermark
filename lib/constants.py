@@ -11,16 +11,46 @@ OVERLAY_RENDER_SIZE = (
 )
 PNG_COMPRESS_LEVEL = 6
 
-OVERLAY_FILE_VARIANTS = ("overlay", "overlay_ai", "overlay_ai_only")
+OVERLAY_FILE_VARIANTS = (
+    "overlay",
+    "overlay_ai",
+    "overlay_ai_only",
+    "EWH_color_left",
+    "EWH_color_right",
+    "EWH_white_left",
+    "EWH_white_right",
+)
 NO_OVERLAY_VARIANT = "none"
-OVERLAY_VARIANTS = (*OVERLAY_FILE_VARIANTS, NO_OVERLAY_VARIANT)
+BRANDS = ("EW", "EWH")
+DEFAULT_BRAND = "EW"
+OVERLAYS_BY_BRAND = {
+    "EW": ("overlay", "overlay_ai", "overlay_ai_only", NO_OVERLAY_VARIANT),
+    "EWH": (
+        "EWH_color_left",
+        "EWH_color_right",
+        "EWH_white_left",
+        "EWH_white_right",
+    ),
+}
+ALL_OVERLAY_VARIANTS = (
+    *OVERLAYS_BY_BRAND["EW"],
+    *OVERLAYS_BY_BRAND["EWH"],
+)
 OVERLAY_LABELS = {
     "overlay": "overlay",
     "overlay_ai": "overlay_ai",
     "overlay_ai_only": "overlay_ai_only",
     "none": "no overlay",
+    "EWH_color_left": "color_left",
+    "EWH_color_right": "color_right",
+    "EWH_white_left": "white_left",
+    "EWH_white_right": "white_right",
 }
-DEFAULT_OVERLAY_VARIANT = "overlay"
+DEFAULT_OVERLAY_BY_BRAND = {
+    "EW": "overlay",
+    "EWH": "EWH_color_right",
+}
+DEFAULT_OVERLAY_VARIANT = DEFAULT_OVERLAY_BY_BRAND[DEFAULT_BRAND]
 
 DEFAULT_HEADLINE = "insert your text here"
 TEXT_COLOR = (255, 255, 255, 255)

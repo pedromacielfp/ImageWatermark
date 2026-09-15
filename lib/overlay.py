@@ -15,6 +15,7 @@ from lib.constants import (
     NO_OVERLAY_VARIANT,
     OVERLAY_FILE_VARIANTS,
     OVERLAY_RENDER_SCALE,
+    OVERLAYS_BY_BRAND,
 )
 
 SVG_NS = "http://www.w3.org/2000/svg"
@@ -28,7 +29,10 @@ def assets_dir() -> Path:
 def overlay_path(variant: str = "overlay") -> Path:
     if variant not in OVERLAY_FILE_VARIANTS:
         raise ValueError(f"Unknown overlay variant: {variant}")
-    return assets_dir() / f"{variant}.svg"
+    for brand, options in OVERLAYS_BY_BRAND.items():
+        if variant in options:
+            return assets_dir() / brand / f"{variant}.svg"
+    raise ValueError(f"Unknown overlay variant: {variant}")
 
 
 def default_overlay_path() -> Path:
