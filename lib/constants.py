@@ -58,8 +58,17 @@ TEXT_SIZE_PX = 95
 TEXT_LINE_HEIGHT = 112
 TEXT_PADDING_X = 64
 TEXT_PADDING_Y = 48
+TEXT_SIZE_MIN = 40
+TEXT_SIZE_MAX = 160
 TEXT_FONT_FAMILY = "Gilroy"
 TEXT_FONT_WEIGHT = 700
+HEADLINE_FONTS = {
+    "Light": ("EurowingsWeb-Light.ttf", 300),
+    "Medium": ("EurowingsWeb-Medium.ttf", 500),
+    "Bold": ("EurowingsWeb-Bold.ttf", 700),
+    "Black": ("EurowingsWeb-Black.ttf", 900),
+}
+DEFAULT_HEADLINE_FONT = "Bold"
 
 CROP_BOX_COLOR = "#6BCCE0"
 PAGE_BACKGROUND = "#AF1E65"

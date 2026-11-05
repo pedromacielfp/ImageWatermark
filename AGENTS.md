@@ -81,7 +81,15 @@ same output.
     deselected. Idle preview shows the baked PNG so it matches export.
 - Render with the bundled file `assets/fonts/EurowingsWeb-Bold.ttf` (Eurowings
   Gilroy Bold cut).
-- The manager can **drag** the text to reposition it and **edit copy inline**.
+- The manager can **drag** the text to reposition it (click-and-drag or grip handle,
+  arrow keys nudge) and **edit copy inline** (double-click or "Edit text").
+- The manager can pick the headline **font** from a dropdown of every bundled
+  Eurowings cut: Light (300), Medium (500), Bold (700, default), Black (900).
+- The manager can **resize** the text (40–160px, default 95px); line-height scales
+  with it at the 95:112 ratio, in both preview and export.
+- Editing happens client-side without Streamlit reruns. **Done – prepare download**
+  bakes the PNG once and shows the download; changing the headline afterwards hides
+  the download until Done is clicked again.
 - The manager can **delete the headline**. Export then omits text (crop + overlay
   only). Headline can be added back in the same session.
 - When a headline is present, export bakes it into the final PNG at that

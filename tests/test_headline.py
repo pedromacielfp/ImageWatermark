@@ -4,10 +4,14 @@ from lib.constants import (
     CANVAS_HEIGHT,
     CANVAS_SIZE,
     DEFAULT_HEADLINE,
+    DEFAULT_HEADLINE_FONT,
+    HEADLINE_FONTS,
     TEXT_FONT_WEIGHT,
     TEXT_LINE_HEIGHT,
     TEXT_PADDING_X,
     TEXT_PADDING_Y,
+    TEXT_SIZE_MAX,
+    TEXT_SIZE_MIN,
     TEXT_SIZE_PX,
 )
 from lib.headline import (
@@ -15,8 +19,11 @@ from lib.headline import (
     default_font_path,
     default_headline_position,
     draw_headline,
+    font_path,
+    line_height_for,
     wrap_text,
 )
+from lib.headline_component import parse_editor_value
 
 
 def test_headline_uses_bold_95_112():
@@ -62,6 +69,54 @@ def test_draw_headline_bakes_white_pixels():
         if found_white:
             break
     assert found_white
+
+
+def test_line_height_scales_with_size():
+    assert line_height_for(TEXT_SIZE_PX) == TEXT_LINE_HEIGHT
+    assert line_height_for(60) == round(60 * TEXT_LINE_HEIGHT / TEXT_SIZE_PX)
+    assert line_height_for(1) == line_height_for(TEXT_SIZE_MIN)
+    assert line_height_for(999) == line_height_for(TEXT_SIZE_MAX)
+
+
+def test_default_position_respects_size():
+    small_y = default_headline_position("HELLO", size=60)[1]
+    big_y = default_headline_position("HELLO", size=140)[1]
+    assert small_y == CANVAS_HEIGHT - TEXT_PADDING_Y - line_height_for(60)
+    assert big_y == CANVAS_HEIGHT - TEXT_PADDING_Y - line_height_for(140)
+
+
+def test_bigger_headline_paints_more_pixels():
+    image = Image.new("RGBA", CANVAS_SIZE, (0, 0, 0, 255))
+
+    def white_count(size: int) -> int:
+        out = draw_headline(image, Headline(text="HELLO", x=0, y=0, bottom_anchored=True, size=size))
+        return sum(out.convert("L").histogram()[201:])
+
+    assert white_count(140) > white_count(60)
+
+
+def test_editor_value_parsing_clamps_size():
+    parsed = parse_editor_value({"text": "Hi", "x": 10, "y": 20, "size": 999, "status": "done", "rev": 3})
+    assert parsed["size"] == TEXT_SIZE_MAX
+    assert parsed["status"] == "done"
+    assert parsed["rev"] == 3
+    assert parse_editor_value(None) is None
+
+
+def test_every_headline_font_is_bundled_and_distinct():
+    image = Image.new("RGBA", CANVAS_SIZE, (0, 0, 0, 255))
+    renders = set()
+    for name, (filename, _) in HEADLINE_FONTS.items():
+        assert font_path(name).name == filename
+        assert font_path(name).exists()
+        out = draw_headline(image, Headline(text="HELLO", x=0, y=0, bottom_anchored=True, font=name))
+        renders.add(out.tobytes())
+    assert len(renders) == len(HEADLINE_FONTS)
+
+
+def test_unknown_font_falls_back_to_default():
+    assert parse_editor_value({"font": "Comic Sans"})["font"] == DEFAULT_HEADLINE_FONT
+    assert font_path("Comic Sans") == default_font_path()
 
 
 def test_draw_headline_is_deterministic():

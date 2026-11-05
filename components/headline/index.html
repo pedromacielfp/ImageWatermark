@@ -8,21 +8,111 @@
         padding: 0;
         background: transparent;
         overflow: hidden;
-        font-family: Gilroy, sans-serif;
+        font-family: "Source Sans Pro", "Segoe UI", sans-serif;
+        color: #ffffff;
+      }
+      #wrap {
+        padding: 0 0 4px 0;
+      }
+      #toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 18px;
+        font-size: 14px;
+      }
+      #toolbar .label {
+        font-weight: 600;
+      }
+      #toolbar .spacer {
+        flex: 1 1 auto;
+      }
+      button {
+        font: inherit;
+        color: #ffffff;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 6px;
+        padding: 4px 10px;
+        cursor: pointer;
+        line-height: 1.3;
+      }
+      button:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+      button.square {
+        width: 30px;
+        padding: 4px 0;
+        font-weight: 700;
+      }
+      button.primary {
+        background: #ffffff;
+        color: #af1e65;
+        border-color: #ffffff;
+        font-weight: 700;
+        padding: 6px 14px;
+      }
+      button.primary:hover {
+        background: #f3dbe7;
+      }
+      select {
+        font: inherit;
+        color: #ffffff;
+        background: #af1e65;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 6px;
+        padding: 4px 6px;
+        cursor: pointer;
+      }
+      #size {
+        width: 140px;
+        accent-color: #6bcce0;
+        cursor: pointer;
+      }
+      #sizeValue {
+        min-width: 44px;
+        font-variant-numeric: tabular-nums;
       }
       #stage {
         position: relative;
         width: 100%;
         line-height: 0;
         user-select: none;
+        touch-action: none;
       }
       #stage img {
         width: 100%;
         height: auto;
         display: block;
+        -webkit-user-drag: none;
+      }
+      #box {
+        position: absolute;
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        border-radius: 4px;
+        cursor: move;
+        touch-action: none;
+      }
+      #box:focus {
+        outline-style: solid;
+      }
+      #box.selected,
+      #box.editing,
+      #box.dragging {
+        outline-color: #ffffff;
+      }
+      #box:not(.selected):not(.editing):not(.dragging):hover {
+        outline: 2px dashed rgba(255, 255, 255, 0.6);
+      }
+      #box.editing {
+        cursor: text;
+      }
+      #box.dragging {
+        cursor: grabbing;
       }
       #headline {
-        position: absolute;
         color: #ffffff;
         font-family: Gilroy, sans-serif;
         font-weight: 700;
@@ -32,68 +122,119 @@
         word-wrap: break-word;
         overflow-wrap: break-word;
         white-space: pre-wrap;
-        cursor: grab;
-        outline: 2px solid transparent;
-        outline-offset: 2px;
         border: none;
-        border-radius: 4px;
-        box-sizing: content-box;
         padding: 0;
+        margin: 0;
         text-shadow: none;
         min-width: 1ch;
+        outline: none;
       }
-      #headline:focus {
-        cursor: text;
-        user-select: text;
-        outline-color: #ffffff;
-      }
-      #headline:focus::selection,
       #headline::selection {
         background: #ffffff;
         color: #af1e65;
       }
-      #headline.dragging {
-        cursor: grabbing;
+      #grip {
+        position: absolute;
+        top: -15px;
+        left: -15px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #af1e65;
+        font: 700 16px/26px "Segoe UI", sans-serif;
+        text-align: center;
+        cursor: grab;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+        display: none;
         user-select: none;
-        outline-color: #ffffff;
+      }
+      #box.selected #grip,
+      #box.editing #grip,
+      #box.dragging #grip,
+      #box:hover #grip {
+        display: block;
+      }
+      #status {
+        margin-top: 10px;
+        font-size: 14px;
+        min-height: 20px;
+      }
+      #status.ready {
+        color: #b9f0c4;
+        font-weight: 600;
       }
     </style>
   </head>
   <body>
-    <div id="stage">
-      <img id="photo" alt="Cropped image with overlay" />
-      <div id="headline" contenteditable="true" spellcheck="false"></div>
+    <div id="wrap">
+      <div id="toolbar">
+        <span class="label">Font</span>
+        <select id="font" title="Headline font"></select>
+        <span class="label">Size</span>
+        <button id="smaller" class="square" title="Smaller">−</button>
+        <input id="size" type="range" step="1" />
+        <button id="bigger" class="square" title="Bigger">+</button>
+        <span id="sizeValue"></span>
+        <button id="edit" title="Edit the headline copy">Edit text</button>
+        <button id="reset" title="Back to bottom-left">Reset position</button>
+        <span class="spacer"></span>
+        <button id="done" class="primary">Done – prepare download</button>
+      </div>
+      <div id="stage">
+        <img id="photo" alt="Cropped image with overlay" draggable="false" />
+        <div id="box" tabindex="0">
+          <div id="grip" title="Drag to move">✥</div>
+          <div id="headline" spellcheck="false"></div>
+        </div>
+      </div>
+      <div id="status"></div>
     </div>
     <script>
       const photo = document.getElementById("photo");
-      const headline = document.getElementById("headline");
       const stage = document.getElementById("stage");
+      const box = document.getElementById("box");
+      const grip = document.getElementById("grip");
+      const headline = document.getElementById("headline");
+      const fontSelect = document.getElementById("font");
+      const sizeInput = document.getElementById("size");
+      const sizeValue = document.getElementById("sizeValue");
+      const statusEl = document.getElementById("status");
 
       let canvasW = 1400;
       let canvasH = 840;
-      let fontSize = 95;
-      let lineHeight = 112;
-      let fontWeight = 700;
+      let baseFontSize = 95;
+      let baseLineHeight = 112;
+      let minSize = 40;
+      let maxSize = 160;
       let paddingX = 64;
       let paddingY = 48;
-      let initialized = false;
+
+      const state = { text: "", x: 64, y: 0, size: 95, font: "Bold", dragged: false };
+      const fontWeights = {};
+      let rev = 0;
+      let dirty = true;
+      let lastStatus = "";
       let baseImage = "";
       let bakedImage = "";
+      let bakedRev = -1;
       let lastShown = "";
-      let interacting = false;
-      let dragged = false;
-      let sending = false;
+      let mode = "idle";
+      let drag = null;
+      let lastTap = 0;
+      let initialized = false;
 
       function sendMessage(type, data) {
-        window.parent.postMessage(Object.assign({
-          isStreamlitMessage: true,
-          type: type
-        }, data), "*");
+        window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: type }, data), "*");
       }
 
+      let lastHeight = 0;
       function setFrameHeight() {
-        const height = Math.ceil(stage.getBoundingClientRect().height) || photo.offsetHeight;
-        sendMessage("streamlit:setFrameHeight", { height: height });
+        const height = Math.ceil(document.getElementById("wrap").getBoundingClientRect().height);
+        if (height && height !== lastHeight) {
+          lastHeight = height;
+          sendMessage("streamlit:setFrameHeight", { height: height });
+        }
       }
 
       function scale() {
@@ -101,175 +242,396 @@
         return width > 0 ? width / canvasW : 1;
       }
 
+      function clamp(value, low, high) {
+        return Math.min(Math.max(value, low), Math.max(low, high));
+      }
+
+      function lineHeightFor(size) {
+        return Math.round((size * baseLineHeight) / baseFontSize);
+      }
+
+      function emit(status) {
+        lastStatus = status;
+        sendMessage("streamlit:setComponentValue", {
+          value: {
+            text: state.text,
+            x: Math.round(state.x),
+            y: Math.round(state.y),
+            size: state.size,
+            font: state.font,
+            dragged: state.dragged,
+            status: status,
+            rev: rev
+          }
+        });
+      }
+
+      function updateStatus() {
+        statusEl.classList.remove("ready");
+        if (dirty) {
+          statusEl.textContent = "Drag the text to move it · double-click to edit · arrow keys nudge. Click Done when you're finished.";
+        } else if (bakedRev !== rev || !bakedImage) {
+          statusEl.textContent = "Preparing download…";
+        } else {
+          statusEl.textContent = "✓ Download ready below. Any change here needs Done again.";
+          statusEl.classList.add("ready");
+        }
+      }
+
+      function markDirty() {
+        if (!dirty) {
+          dirty = true;
+          if (lastStatus === "done") emit("editing");
+        }
+        updateStatus();
+        showPreview();
+      }
+
       function showPreview() {
-        const live = interacting || !bakedImage;
-        const next = live ? baseImage : bakedImage;
+        const useBaked = !dirty && bakedImage && bakedRev === rev && mode !== "editing" && !drag;
+        const next = useBaked ? bakedImage : baseImage;
         if (next && lastShown !== next) {
           lastShown = next;
           photo.src = next;
         }
-        headline.style.color = live ? "#ffffff" : "transparent";
-        headline.style.caretColor = live ? "#ffffff" : "transparent";
+        headline.style.color = useBaked ? "transparent" : "#ffffff";
+        headline.style.caretColor = "#ffffff";
       }
 
-      function applyLayout() {
+      function place() {
         const s = scale();
-        headline.style.fontSize = fontSize * s + "px";
-        headline.style.lineHeight = lineHeight * s + "px";
-        headline.style.left = parseFloat(headline.dataset.x || String(paddingX)) * s + "px";
-        headline.style.top = parseFloat(headline.dataset.y || String(canvasH - paddingY - lineHeight)) * s + "px";
-        headline.style.maxWidth = (canvasW - parseFloat(headline.dataset.x || String(paddingX)) - paddingX) * s + "px";
+        box.style.left = state.x * s + "px";
+        box.style.top = state.y * s + "px";
+        headline.style.maxWidth = Math.max(1, canvasW - state.x - paddingX) * s + "px";
+      }
+
+      function render() {
+        const s = scale();
+        const lh = lineHeightFor(state.size);
+        headline.style.fontSize = state.size * s + "px";
+        headline.style.lineHeight = lh * s + "px";
+        if (!state.dragged) state.x = paddingX;
+        place();
+        const lines = Math.max(1, Math.round(headline.offsetHeight / (lh * s)));
+        const blockH = lines * lh;
+        if (!state.dragged) {
+          state.y = canvasH - paddingY - blockH;
+        } else {
+          state.y = clamp(state.y, 0, canvasH - blockH);
+        }
+        place();
         setFrameHeight();
       }
 
-      function currentValue() {
-        const s = scale();
-        return {
-          text: headline.innerText.replace(/\u00a0/g, " "),
-          x: Math.round(parseFloat(headline.style.left || "0") / s),
-          y: Math.round(parseFloat(headline.style.top || "0") / s),
-          dragged: dragged
-        };
+      function readText() {
+        return headline.innerText.replace(/\u00a0/g, " ").replace(/\n+$/, "");
       }
 
-      function emit() {
-        if (sending) return;
-        sending = true;
-        sendMessage("streamlit:setComponentValue", { value: currentValue() });
-        sending = false;
+      function setMode(next) {
+        if (mode === "editing" && next !== "editing") {
+          headline.contentEditable = "false";
+          state.text = readText();
+          if (!state.text.trim()) {
+            state.text = "insert your text here";
+            headline.textContent = state.text;
+            markDirty();
+          }
+          window.getSelection().removeAllRanges();
+          render();
+        }
+        mode = next;
+        box.classList.toggle("selected", mode === "selected");
+        box.classList.toggle("editing", mode === "editing");
+        showPreview();
       }
 
-      let emitTimer = null;
-      function emitSoon() {
-        clearTimeout(emitTimer);
-        emitTimer = setTimeout(emit, 200);
+      function placeCaret(clientX, clientY) {
+        let range = null;
+        if (clientX !== undefined && document.caretRangeFromPoint) {
+          range = document.caretRangeFromPoint(clientX, clientY);
+        } else if (clientX !== undefined && document.caretPositionFromPoint) {
+          const pos = document.caretPositionFromPoint(clientX, clientY);
+          if (pos) {
+            range = document.createRange();
+            range.setStart(pos.offsetNode, pos.offset);
+          }
+        }
+        if (!range || !headline.contains(range.startContainer)) {
+          range = document.createRange();
+          range.selectNodeContents(headline);
+          range.collapse(false);
+        }
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+
+      function startEditing(clientX, clientY) {
+        if (mode === "editing") return;
+        setMode("editing");
+        headline.contentEditable = "true";
+        headline.focus();
+        placeCaret(clientX, clientY);
+      }
+
+      function setSize(next) {
+        const size = clamp(Math.round(next), minSize, maxSize);
+        if (size === state.size) return;
+        state.size = size;
+        sizeInput.value = String(size);
+        sizeValue.textContent = size + "px";
+        markDirty();
+        render();
+      }
+
+      function applyFont() {
+        headline.style.fontFamily = "'EW-" + state.font + "', sans-serif";
+        headline.style.fontWeight = String(fontWeights[state.font] || 700);
+      }
+
+      function setFont(name) {
+        if (!(name in fontWeights) || name === state.font) return;
+        state.font = name;
+        applyFont();
+        markDirty();
+        render();
+        if (document.fonts && document.fonts.load) {
+          document.fonts.load(fontWeights[name] + " 20px 'EW-" + name + "'").then(render, render);
+        }
       }
 
       function initFromArgs(args) {
-        canvasW = args.canvas_width || 1400;
-        canvasH = args.canvas_height || 840;
-        fontSize = args.font_size || 95;
-        lineHeight = args.line_height || 112;
-        fontWeight = args.font_weight || 700;
-        paddingX = args.padding_x || 64;
-        paddingY = args.padding_y || 48;
-        if (args.font_data) {
-          const style = document.createElement("style");
-          style.textContent =
-            "@font-face { font-family: 'Gilroy'; src: url('" +
-            args.font_data +
-            "') format('truetype'); font-weight: " +
-            fontWeight +
-            "; font-style: normal; font-display: block; }";
-          document.head.appendChild(style);
-        }
-        headline.style.fontWeight = String(fontWeight);
-        headline.textContent = args.text || "insert your text here";
-        headline.dataset.x = String(args.x);
-        headline.dataset.y = String(args.y);
-        baseImage = args.image_data || "";
-        bakedImage = args.baked_data || "";
-        showPreview();
-        if (!baseImage && !bakedImage) {
-          applyLayout();
-        }
+        canvasW = args.canvas_width || canvasW;
+        canvasH = args.canvas_height || canvasH;
+        baseFontSize = args.base_font_size || baseFontSize;
+        baseLineHeight = args.base_line_height || baseLineHeight;
+        minSize = args.min_size || minSize;
+        maxSize = args.max_size || maxSize;
+        paddingX = args.padding_x || paddingX;
+        paddingY = args.padding_y || paddingY;
+        const fonts = args.fonts || [];
+        const faces = [];
+        fonts.forEach(function (font) {
+          fontWeights[font.name] = font.weight;
+          faces.push(
+            "@font-face { font-family: 'EW-" + font.name + "'; src: url('" + font.data +
+            "') format('truetype'); font-weight: " + font.weight +
+            "; font-style: normal; font-display: block; }"
+          );
+          const option = document.createElement("option");
+          option.value = font.name;
+          option.textContent = font.name + " (" + font.weight + ")";
+          fontSelect.appendChild(option);
+        });
+        const style = document.createElement("style");
+        style.textContent = faces.join("\n");
+        document.head.appendChild(style);
+        state.font = args.font in fontWeights ? args.font : (fonts[0] ? fonts[0].name : "Bold");
+        fontSelect.value = state.font;
+        applyFont();
+        state.text = args.text || "insert your text here";
+        state.x = Number(args.x) || paddingX;
+        state.y = Number(args.y) || 0;
+        state.size = clamp(Number(args.size) || baseFontSize, minSize, maxSize);
+        state.dragged = Boolean(args.dragged);
+        rev = Number(args.rev) || 0;
+        headline.textContent = state.text;
+        sizeInput.min = String(minSize);
+        sizeInput.max = String(maxSize);
+        sizeInput.value = String(state.size);
+        sizeValue.textContent = state.size + "px";
+        applyRenderArgs(args);
+        dirty = !(bakedImage && bakedRev === rev);
+        if (!dirty) lastStatus = "done";
         initialized = true;
+        if (document.fonts && document.fonts.load) {
+          Promise.all(
+            fonts.map(function (font) {
+              return document.fonts.load(font.weight + " 20px 'EW-" + font.name + "'");
+            })
+          ).then(render, render);
+        }
+        render();
+        updateStatus();
+        showPreview();
       }
 
-      photo.addEventListener("load", applyLayout);
-      window.addEventListener("resize", applyLayout);
+      function applyRenderArgs(args) {
+        baseImage = args.image_data || baseImage;
+        bakedImage = args.baked_data || "";
+        bakedRev = typeof args.baked_rev === "number" ? args.baked_rev : -1;
+      }
 
-      headline.addEventListener("input", function () {
-        interacting = true;
-        showPreview();
-        if (!dragged) {
-          const s = scale();
-          const pad = paddingY * s;
-          const top = Math.max(0, (photo.clientHeight || 0) - pad - headline.offsetHeight);
-          headline.style.top = top + "px";
-          headline.dataset.y = String(Math.round(top / s));
-        }
-        emitSoon();
-      });
-
-      let drag = null;
-      headline.addEventListener("pointerdown", function (event) {
+      box.addEventListener("pointerdown", function (event) {
         if (event.button !== 0) return;
-        interacting = true;
-        showPreview();
+        const onGrip = event.target === grip;
+        if (mode === "editing" && !onGrip) return;
+        event.preventDefault();
+        if (mode === "editing") setMode("selected");
+        else if (mode !== "selected") setMode("selected");
+        box.focus({ preventScroll: true });
+        const s = scale();
         drag = {
           startX: event.clientX,
           startY: event.clientY,
-          origLeft: headline.offsetLeft,
-          origTop: headline.offsetTop,
+          origX: state.x,
+          origY: state.y,
+          w: headline.offsetWidth / s,
+          h: headline.offsetHeight / s,
           moved: false
         };
-        headline.setPointerCapture(event.pointerId);
+        box.setPointerCapture(event.pointerId);
       });
 
-      headline.addEventListener("pointermove", function (event) {
+      box.addEventListener("pointermove", function (event) {
         if (!drag) return;
-        const dx = event.clientX - drag.startX;
-        const dy = event.clientY - drag.startY;
-        if (!drag.moved && Math.hypot(dx, dy) < 5) return;
-        drag.moved = true;
-        dragged = true;
-        interacting = true;
-        headline.classList.add("dragging");
-        showPreview();
+        const dxPx = event.clientX - drag.startX;
+        const dyPx = event.clientY - drag.startY;
+        if (!drag.moved && Math.hypot(dxPx, dyPx) < 3) return;
+        if (!drag.moved) {
+          drag.moved = true;
+          state.dragged = true;
+          box.classList.add("dragging");
+          markDirty();
+        }
         const s = scale();
-        const maxLeft = Math.max(0, (photo.clientWidth || 0) - headline.offsetWidth);
-        const maxTop = Math.max(0, (photo.clientHeight || 0) - headline.offsetHeight);
-        const left = Math.min(maxLeft, Math.max(0, drag.origLeft + dx));
-        const top = Math.min(maxTop, Math.max(0, drag.origTop + dy));
-        headline.style.left = left + "px";
-        headline.style.top = top + "px";
-        headline.dataset.x = String(Math.round(left / s));
-        headline.dataset.y = String(Math.round(top / s));
+        state.x = clamp(drag.origX + dxPx / s, 0, canvasW - paddingX - drag.w);
+        state.y = clamp(drag.origY + dyPx / s, 0, canvasH - drag.h);
+        place();
       });
 
       function endDrag(event) {
         if (!drag) return;
-        const wasDrag = drag.moved;
+        const moved = drag.moved;
         drag = null;
-        headline.classList.remove("dragging");
-        if (wasDrag) {
-          headline.blur();
-          emit();
+        box.classList.remove("dragging");
+        if (moved) {
+          state.x = Math.round(state.x);
+          state.y = Math.round(state.y);
+          place();
+          lastTap = 0;
+        } else if (event && event.type === "pointerup") {
+          const now = Date.now();
+          if (now - lastTap < 400) {
+            lastTap = 0;
+            startEditing(event.clientX, event.clientY);
+            return;
+          }
+          lastTap = now;
         }
+        showPreview();
       }
 
-      headline.addEventListener("pointerup", endDrag);
-      headline.addEventListener("pointercancel", endDrag);
+      box.addEventListener("pointerup", endDrag);
+      box.addEventListener("pointercancel", endDrag);
+      box.addEventListener("dblclick", function (event) {
+        startEditing(event.clientX, event.clientY);
+      });
+
+      box.addEventListener("keydown", function (event) {
+        if (mode === "editing") {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            setMode("selected");
+            box.focus({ preventScroll: true });
+          }
+          return;
+        }
+        const step = event.shiftKey ? 10 : 1;
+        const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+        if (moves[event.key]) {
+          event.preventDefault();
+          const s = scale();
+          const w = headline.offsetWidth / s;
+          const h = headline.offsetHeight / s;
+          state.dragged = true;
+          state.x = clamp(state.x + moves[event.key][0], 0, canvasW - paddingX - w);
+          state.y = clamp(state.y + moves[event.key][1], 0, canvasH - h);
+          markDirty();
+          place();
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          startEditing();
+        } else if (event.key === "Escape") {
+          setMode("idle");
+          box.blur();
+        }
+      });
+
+      box.addEventListener("blur", function () {
+        setTimeout(function () {
+          if (!box.contains(document.activeElement) && mode === "selected" && !drag) setMode("idle");
+        }, 0);
+      });
+
       headline.addEventListener("blur", function () {
-        interacting = false;
-        headline.style.outlineColor = "transparent";
-        emit();
+        setTimeout(function () {
+          if (mode === "editing" && !box.contains(document.activeElement)) setMode("idle");
+        }, 0);
+      });
+
+      headline.addEventListener("input", function () {
+        state.text = readText();
+        markDirty();
+        render();
+      });
+
+      headline.addEventListener("paste", function (event) {
+        event.preventDefault();
+        const text = (event.clipboardData || window.clipboardData).getData("text/plain");
+        document.execCommand("insertText", false, text);
+      });
+
+      stage.addEventListener("pointerdown", function (event) {
+        if (box.contains(event.target)) return;
+        setMode("idle");
+        box.blur();
+      });
+
+      fontSelect.addEventListener("change", function () {
+        setFont(fontSelect.value);
+      });
+      sizeInput.addEventListener("input", function () {
+        setSize(Number(sizeInput.value));
+      });
+      document.getElementById("smaller").addEventListener("click", function () {
+        setSize(state.size - 1);
+      });
+      document.getElementById("bigger").addEventListener("click", function () {
+        setSize(state.size + 1);
+      });
+      document.getElementById("edit").addEventListener("click", function () {
+        startEditing();
+      });
+      document.getElementById("reset").addEventListener("click", function () {
+        if (!state.dragged) return;
+        state.dragged = false;
+        markDirty();
+        render();
+      });
+      document.getElementById("done").addEventListener("click", function () {
+        setMode("idle");
+        rev += 1;
+        dirty = false;
+        emit("done");
+        updateStatus();
         showPreview();
       });
-      headline.addEventListener("focus", function () {
-        interacting = true;
-        headline.style.outlineColor = "#ffffff";
-        showPreview();
-      });
+
+      photo.addEventListener("load", render);
+      window.addEventListener("resize", render);
 
       window.addEventListener("message", function (event) {
         const data = event.data;
-        if (!data) return;
-        if (data.type === "streamlit:render") {
-          const args = data.args || {};
-          if (!initialized) {
-            initFromArgs(args);
-            return;
-          }
-          if (args.image_data) {
-            baseImage = args.image_data;
-          }
-          if (args.baked_data) {
-            bakedImage = args.baked_data;
-          }
-          showPreview();
+        if (!data || data.type !== "streamlit:render") return;
+        const args = data.args || {};
+        if (!initialized) {
+          initFromArgs(args);
+          return;
         }
+        applyRenderArgs(args);
+        updateStatus();
+        showPreview();
       });
 
       sendMessage("streamlit:componentReady", { apiVersion: 1 });

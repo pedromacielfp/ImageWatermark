@@ -8,16 +8,18 @@ from lib.constants import (
     CROP_BOX_COLOR,
     DEFAULT_BRAND,
     DEFAULT_HEADLINE,
+    DEFAULT_HEADLINE_FONT,
     DEFAULT_OVERLAY_BY_BRAND,
     DEFAULT_OVERLAY_VARIANT,
     OVERLAY_FILE_VARIANTS,
     OVERLAY_LABELS,
     OVERLAYS_BY_BRAND,
     PAGE_BACKGROUND,
+    TEXT_SIZE_PX,
 )
 from lib.crop import crop_and_resize, load_image, render_cropper
 from lib.headline import Headline, default_headline_position
-from lib.headline_component import render_headline_editor
+from lib.headline_component import parse_editor_value, render_headline_editor
 from lib.overlay import canvas_mask, corner_mask_path, overlay_for_variant, overlay_path
 
 st.set_page_config(page_title="Image Watermark & Crop", layout="centered")
@@ -137,12 +139,20 @@ box = render_cropper(image, key=f"cropper-{file_id}")
 if st.button("Confirm crop", type="primary"):
     st.session_state.confirmed = True
     st.session_state.box = box
-    st.session_state.headline = None
 
 if not st.session_state.get("confirmed"):
     st.stop()
 
-cropped = crop_and_resize(image, st.session_state.box)
+def _cached(slot: str, cache_key: tuple, build):
+    entry = st.session_state.get(slot)
+    if entry is None or entry[0] != cache_key:
+        entry = (cache_key, build())
+        st.session_state[slot] = entry
+    return entry[1]
+
+
+crop_key = (file_id, tuple(sorted(st.session_state.box.items())))
+cropped = _cached("_cropped_cache", crop_key, lambda: crop_and_resize(image, st.session_state.box))
 
 if "overlay_variant" not in st.session_state:
     st.session_state.overlay_variant = DEFAULT_OVERLAY_BY_BRAND[
@@ -163,10 +173,20 @@ for column, name in zip(overlay_cols, options):
 variant = st.session_state.get("overlay_variant", DEFAULT_OVERLAY_VARIANT)
 overlay = overlay_for_variant(variant)
 mask = canvas_mask(corner_mask_path())
-base = compose(cropped, overlay=overlay, mask=mask)
+
+
+def _build_base():
+    composed = compose(cropped, overlay=overlay, mask=mask)
+    return composed, encode_png(composed)
+
+
+base_key = (*crop_key, variant)
+base, base_png = _cached("_base_cache", base_key, _build_base)
 
 if "headline_enabled" not in st.session_state:
     st.session_state.headline_enabled = True
+if "headline_rev" not in st.session_state:
+    st.session_state.headline_rev = 0
 
 headline_header, headline_action = st.columns([3, 1])
 with headline_header:
@@ -179,54 +199,63 @@ with headline_action:
     elif st.button("Add headline"):
         st.session_state.headline_enabled = True
         st.session_state.headline = None
+        st.session_state.headline_rev += 1
         st.rerun()
 
+final_png = None
 if st.session_state.headline_enabled:
-    st.write("Drag to reposition. Click the text to edit it.")
-    if st.session_state.headline is None:
+    editor_key = f"headline-{file_id}-{st.session_state.headline_rev}"
+    latest = parse_editor_value(st.session_state.get(editor_key)) or st.session_state.get("headline")
+    if latest is None:
         x, y = default_headline_position(DEFAULT_HEADLINE)
-        st.session_state.headline = {
+        latest = {
             "text": DEFAULT_HEADLINE,
             "x": x,
             "y": y,
+            "size": TEXT_SIZE_PX,
+            "font": DEFAULT_HEADLINE_FONT,
             "dragged": False,
+            "status": "editing",
+            "rev": 0,
         }
-    headline = Headline(
-        text=st.session_state.headline["text"],
-        x=st.session_state.headline["x"],
-        y=st.session_state.headline["y"],
-        bottom_anchored=not st.session_state.headline.get("dragged", False),
+    st.session_state.headline = latest
+
+    baked_png = None
+    if latest["status"] == "done":
+        headline = Headline(
+            text=latest["text"],
+            x=latest["x"],
+            y=latest["y"],
+            bottom_anchored=not latest["dragged"],
+            size=latest["size"],
+            font=latest.get("font", DEFAULT_HEADLINE_FONT),
+        )
+        baked_png = _cached(
+            "_final_cache",
+            (*base_key, headline),
+            lambda: encode_png(compose(cropped, overlay=overlay, mask=mask, headline=headline)),
+        )
+    render_headline_editor(
+        base_png,
+        latest,
+        baked_png=baked_png,
+        baked_rev=latest["rev"] if baked_png else -1,
+        key=editor_key,
     )
-    baked = compose(cropped, overlay=overlay, mask=mask, headline=headline)
-    edited = render_headline_editor(
-        encode_png(base),
-        text=st.session_state.headline["text"],
-        x=st.session_state.headline["x"],
-        y=st.session_state.headline["y"],
-        baked_png=encode_png(baked),
-        overlay_variant=variant,
-        dragged=st.session_state.headline.get("dragged", False),
-        key=f"headline-{file_id}-{variant}",
-    )
-    st.session_state.headline = edited
-    headline = Headline(
-        text=edited["text"],
-        x=edited["x"],
-        y=edited["y"],
-        bottom_anchored=not edited["dragged"],
-    )
-    final = compose(cropped, overlay=overlay, mask=mask, headline=headline)
+    final_png = baked_png
 else:
     st.write("Headline removed. The download is crop + overlay only.")
     st.image(base, caption=f"Live preview · {variant}", output_format="PNG")
-    final = base
+    final_png = base_png
 
 st.subheader("4. Download")
-st.image(final, caption=f"{CANVAS_SIZE[0]}×{CANVAS_SIZE[1]} PNG", output_format="PNG")
-st.download_button(
-    "Download PNG",
-    data=encode_png(final),
-    file_name="watermarked.png",
-    mime="image/png",
-    type="primary",
-)
+if final_png is None:
+    st.info("Finish the headline above and click **Done – prepare download** to get your PNG.")
+else:
+    st.download_button(
+        f"Download PNG ({CANVAS_SIZE[0]}×{CANVAS_SIZE[1]})",
+        data=final_png,
+        file_name="watermarked.png",
+        mime="image/png",
+        type="primary",
+    )
